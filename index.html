@@ -332,6 +332,11 @@
         .generated-url button:hover {
             background: #44a08d;
         }
+
+        .player-input { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .player-input label { min-width: 90px; }
+        .player-input input { flex: 2; padding: 8px; border-radius: 5px; border: 1px solid #ccc; }
+        .player-input select { flex: 1; padding: 8px; border-radius: 5px; border: 1px solid #4ecdc4; background: #f8f8f8; }
     </style>
 </head>
 <body>
@@ -461,6 +466,12 @@
                         <button id="start-auto-btn-manual" class="btn-auto" disabled>🚀 Iniciar Torneo Automático</button>
                     </div>
                     <button id="start-tournament" class="btn-primary">Iniciar Torneo</button>
+                    <div style="margin: 20px 0;">
+                        <label style="font-weight:bold;">🔗 URL del Widget (con mejoras seleccionadas):</label>
+                        <input type="text" id="widget-url" readonly style="width:100%;margin-bottom:5px;">
+                        <button class="copy-btn" onclick="copyWidgetUrl()">Copiar URL</button>
+                        <button class="copy-btn" onclick="updateWidgetUrl()" style="margin-top: 5px; background: #ff6b6b;">🔄 Generar URL</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -603,73 +614,47 @@
         let tournamentStarted = false;
         let savedPlayers = null;
 
-        // Función para copiar URL del widget
-        function copyWidgetUrl() {
-            // Obtener participantes configurados o usar por defecto
-            const inputs = document.querySelectorAll('#player-inputs input');
-            let participants = [];
-            
-            inputs.forEach(input => {
-                if (input.value.trim()) {
-                    participants.push(input.value.trim());
-                }
-            });
-            
-            // Si no hay suficientes participantes, usar por defecto
-            if (participants.length < 2) {
-                participants = ['Tuffy', 'Capi', 'Juan', 'Maria'];
-            }
-            
-            // Construir URL del widget
-            const baseUrl = window.location.origin + window.location.pathname;
-            const participantesStr = participants.join('&');
-            const widgetUrl = `${baseUrl}?participantes=${encodeURIComponent(participantesStr)}&auto=true`;
-            
-            // Actualizar y copiar URL
-            const urlInput = document.getElementById('widget-url');
-            urlInput.value = widgetUrl;
-            urlInput.select();
-            urlInput.setSelectionRange(0, 99999);
-            document.execCommand('copy');
-            
-            const copyBtn = document.querySelector('.copy-btn');
-            const originalText = copyBtn.textContent;
-            copyBtn.textContent = '¡Copiado!';
-            copyBtn.style.background = '#4ecdc4';
-            
-            setTimeout(() => {
-                copyBtn.textContent = originalText;
-                copyBtn.style.background = '#4ecdc4';
-            }, 2000);
-            
-            console.log('[WIDGET] URL del widget generada:', widgetUrl);
-        }
-
         // Función para actualizar URL del widget automáticamente
         function updateWidgetUrl() {
-            const inputs = document.querySelectorAll('#player-inputs input');
+            const count = parseInt(document.getElementById('player-count').value);
             const participants = [];
-            
-            inputs.forEach(input => {
-                if (input.value.trim()) {
-                    participants.push(input.value.trim());
+            for (let i = 1; i <= count; i++) {
+                const input = document.getElementById(`player-${i}`);
+                const select = document.getElementById(`ventaja-player-${i}`);
+                if (input && input.value.trim()) {
+                    let nombre = input.value.trim();
+                    if (select && select.value) {
+                        nombre += select.value;
+                    }
+                    participants.push(nombre);
                 }
-            });
-            
+            }
             if (participants.length >= 2) {
                 const baseUrl = window.location.origin + window.location.pathname;
                 const participantesStr = participants.join('&');
                 const widgetUrl = `${baseUrl}?participantes=${encodeURIComponent(participantesStr)}&auto=true`;
-                
                 const urlInput = document.getElementById('widget-url');
                 urlInput.value = widgetUrl;
-                
-                console.log('[WIDGET] URL del widget actualizada:', widgetUrl);
-                console.log('[WIDGET] Participantes:', participants);
             } else {
                 const urlInput = document.getElementById('widget-url');
                 urlInput.value = 'Configura al menos 2 participantes';
             }
+        }
+
+        function copyWidgetUrl() {
+            updateWidgetUrl();
+            const urlInput = document.getElementById('widget-url');
+            urlInput.select();
+            urlInput.setSelectionRange(0, 99999);
+            document.execCommand('copy');
+            const copyBtn = document.querySelector('.copy-btn');
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = '¡Copiado!';
+            copyBtn.style.background = '#4ecdc4';
+            setTimeout(() => {
+                copyBtn.textContent = originalText;
+                copyBtn.style.background = '#4ecdc4';
+            }, 2000);
         }
 
         // Función para alternar modo widget

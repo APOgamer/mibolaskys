@@ -60,43 +60,28 @@ class TorneoBolas {
     parseParticipantes(participantesStr, autoStart = false) {
         const participantes = participantesStr.split('&').filter(p => p.trim());
         const players = [];
-        
         participantes.forEach((participante, index) => {
-            const player = {
+            let player = {
                 id: index + 1,
                 name: participante,
                 speed: 5,
                 sawChance: 20,
                 size: 100,
-                eliminated: false,
-                ventajas: []
+                eliminated: false
             };
-            
             // Detectar ventajas en el nombre (ej: tuffy1, capi2)
-            const match = participante.match(/^(.+?)(\d+)$/);
+            const match = participante.match(/^(.+?)([123])$/);
             if (match) {
                 player.name = match[1];
-                const ventaja = parseInt(match[2]);
-                if (ventaja >= 1 && ventaja <= 3) {
-                    player.ventajas.push(ventaja);
-                    // Aplicar ventaja
-                    switch (ventaja) {
-                        case 1: // Velocidad
-                            player.speed += 2;
-                            break;
-                        case 2: // Probabilidad de sierra
-                            player.sawChance += 10;
-                            break;
-                        case 3: // Tamaño
-                            player.size += 20;
-                            break;
-                    }
+                const ventaja = match[2];
+                switch (ventaja) {
+                    case '1': player.speed += 2; break;
+                    case '2': player.sawChance += 10; break;
+                    case '3': player.size += 20; break;
                 }
             }
-            
             players.push(player);
         });
-        
         return {
             players: players,
             autoStart: autoStart
@@ -183,38 +168,36 @@ class TorneoBolas {
     // Iniciar torneo
     startTournament() {
         const playerCount = parseInt(document.getElementById('player-count').value);
-        const inputs = document.querySelectorAll('#player-inputs input');
-        
-        // Validar que todos los nombres estén completos
-        for (let input of inputs) {
+        const players = [];
+        for (let i = 0; i < playerCount; i++) {
+            const input = document.getElementById(`player-${i + 1}`);
+            const select = document.getElementById(`ventaja-player-${i + 1}`);
             if (!input.value.trim()) {
                 alert('Por favor, completa todos los nombres de jugadores.');
                 return;
             }
-        }
-
-        // Crear jugadores
-        this.players = [];
-        for (let i = 0; i < playerCount; i++) {
-            this.players.push({
+            let player = {
                 id: i + 1,
-                name: inputs[i].value.trim(),
+                name: input.value.trim(),
                 speed: 5,
                 sawChance: 20,
                 size: 100,
                 eliminated: false
-            });
+            };
+            if (select && select.value) {
+                switch (select.value) {
+                    case '1': player.speed += 2; break;
+                    case '2': player.sawChance += 10; break;
+                    case '3': player.size += 20; break;
+                }
+            }
+            players.push(player);
         }
-
-        // Generar emparejamientos
+        this.players = players;
         this.generateMatches();
-        
-        // Mostrar pantalla de torneo
         this.showScreen('tournament-screen');
         this.updateTournamentDisplay();
         this.prepareNextMatch();
-        
-        // Mostrar botón de modo automático
         const activateAutoBtn = document.getElementById('activate-auto-mode');
         if (activateAutoBtn) {
             activateAutoBtn.style.display = 'block';
