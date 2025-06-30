@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widget OBS - Torneo de Bolas Eléctricas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .widget-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 20px;
+            text-align: center;
+            border-bottom: 2px solid #4ecdc4;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .tournament-info {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid #4ecdc4;
+        }
+
+        .round-info {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .match-info {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .match-preview {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .player-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #4ecdc4;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            min-width: 200px;
+            backdrop-filter: blur(10px);
+        }
+
+        .player-name {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .stats {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+
+        .vs-section {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .vs-text {
+            font-size: 36px;
+            font-weight: bold;
+            color: #ff6b6b;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .timer {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4ecdc4;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 2px solid #4ecdc4;
+        }
+
+        .upgrades-section {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #4ecdc4;
+        }
+
+        .upgrades-section h4 {
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .upgrade-options {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .upgrade-btn {
+            background: linear-gradient(45deg, #4ecdc4, #44a08d);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .upgrade-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .upgrade-btn.used {
+            background: #666;
+            cursor: not-allowed;
+        }
+
+        .battle-arena {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        #battle-canvas {
+            border: 3px solid #4ecdc4;
+            border-radius: 10px;
+            background: #1a1a1a;
+        }
+
+        .result-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.8);
+            text-align: center;
+        }
+
+        .winner-announcement {
+            font-size: 32px;
+            color: #4ecdc4;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .winner-name {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .champion-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            text-align: center;
+        }
+
+        .champion-title {
+            font-size: 36px;
+            color: #1e3c72;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .champion-name {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1e3c72;
+            margin-bottom: 20px;
+        }
+
+        .champion-trophy {
+            font-size: 80px;
+            margin-bottom: 30px;
+        }
+
+        .url-display {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #4ecdc4;
+            font-size: 12px;
+            max-width: 300px;
+            word-break: break-all;
+        }
+
+        .url-display input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 12px;
+            outline: none;
+        }
+
+        .copy-btn {
+            background: #4ecdc4;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 10px;
+            margin-top: 5px;
+        }
+
+        .screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+        }
+
+        .screen.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .auto-timer {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #4ecdc4;
+            text-align: center;
+            z-index: 1000;
+        }
+
+        .auto-timer h3 {
+            margin-bottom: 10px;
+            color: #4ecdc4;
+        }
+
+        .auto-timer .countdown {
+            font-size: 48px;
+            font-weight: bold;
+            color: #ff6b6b;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .pulse {
+            animation: pulse 1s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="widget-container">
+        <!-- URL Display -->
+        <div class="url-display">
+            <div>URL del Widget:</div>
+            <input type="text" id="widget-url" readonly value="">
+            <button class="copy-btn" onclick="copyUrl()">Copiar URL</button>
+        </div>
+
+        <!-- Pantalla de inicio -->
+        <div id="start-screen" class="screen active">
+            <div class="header">
+                <h1>🏆 Torneo de Guambrillos 🏆</h1>
+            </div>
+            <div class="tournament-info">
+                <div class="round-info">Configuración del Torneo</div>
+                <div class="match-info">Modo Automático para OBS</div>
+            </div>
+            <div class="match-preview">
+                <div class="player-card">
+                    <div class="player-name">Configuración</div>
+                    <div class="stats">
+                        <div class="stat">
+                            <span>Jugadores:</span>
+                            <span id="player-count-display">4</span>
+                        </div>
+                        <div class="stat">
+                            <span>Tiempo Auto:</span>
+                            <span>5 seg</span>
+                        </div>
+                        <div class="stat">
+                            <span>Modo:</span>
+                            <span>OBS Widget</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="vs-section">
+                    <div class="vs-text">⚡</div>
+                    <div class="upgrades-section">
+                        <h4>Configuración Rápida</h4>
+                        <div class="upgrade-options">
+                            <button class="upgrade-btn" onclick="setPlayerCount(4)">4 Jugadores</button>
+                            <button class="upgrade-btn" onclick="setPlayerCount(8)">8 Jugadores</button>
+                        </div>
+                        <div class="upgrade-options">
+                            <button class="upgrade-btn" onclick="setPlayerCount(16)">16 Jugadores</button>
+                            <button class="upgrade-btn" onclick="startAutoTournament()">Iniciar Auto</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="player-card">
+                    <div class="player-name">Características</div>
+                    <div class="stats">
+                        <div class="stat">
+                            <span>Temporizador:</span>
+                            <span>Automático</span>
+                        </div>
+                        <div class="stat">
+                            <span>Mejoras:</span>
+                            <span>Auto</span>
+                        </div>
+                        <div class="stat">
+                            <span>Combates:</span>
+                            <span>Auto</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pantalla de torneo -->
+        <div id="tournament-screen" class="screen">
+            <div class="header">
+                <h1>🏆 Torneo en Progreso</h1>
+            </div>
+            <div class="tournament-info">
+                <div class="round-info" id="current-round">Ronda 1</div>
+                <div class="match-info" id="match-info">Combate 1 de 2</div>
+            </div>
+            
+            <div class="match-preview">
+                <div class="player-card" id="player1-card">
+                    <div class="player-name" id="player1-name">Jugador 1</div>
+                    <div class="stats">
+                        <div class="stat">
+                            <span>Velocidad:</span>
+                            <span id="player1-speed">5</span>
+                        </div>
+                        <div class="stat">
+                            <span>Prob. Sierra:</span>
+                            <span id="player1-saw-chance">20%</span>
+                        </div>
+                        <div class="stat">
+                            <span>Tamaño:</span>
+                            <span id="player1-size">100%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="vs-section">
+                    <div class="vs-text">VS</div>
+                    <div class="timer" id="auto-timer">5</div>
+                    <div class="upgrades-section">
+                        <h4>Mejoras Automáticas</h4>
+                        <div class="upgrade-options">
+                            <button class="upgrade-btn" data-player="1" data-upgrade="speed">+ Velocidad</button>
+                            <button class="upgrade-btn" data-player="1" data-upgrade="saw">+ Prob. Sierra</button>
+                            <button class="upgrade-btn" data-player="1" data-upgrade="size">+ Tamaño</button>
+                        </div>
+                        <div class="upgrade-options">
+                            <button class="upgrade-btn" data-player="2" data-upgrade="speed">+ Velocidad</button>
+                            <button class="upgrade-btn" data-player="2" data-upgrade="saw">+ Prob. Sierra</button>
+                            <button class="upgrade-btn" data-player="2" data-upgrade="size">+ Tamaño</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="player-card" id="player2-card">
+                    <div class="player-name" id="player2-name">Jugador 2</div>
+                    <div class="stats">
+                        <div class="stat">
+                            <span>Velocidad:</span>
+                            <span id="player2-speed">5</span>
+                        </div>
+                        <div class="stat">
+                            <span>Prob. Sierra:</span>
+                            <span id="player2-saw-chance">20%</span>
+                        </div>
+                        <div class="stat">
+                            <span>Tamaño:</span>
+                            <span id="player2-size">100%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pantalla de combate -->
+        <div id="battle-screen" class="screen">
+            <div class="header">
+                <h1>⚔️ Combate en Progreso</h1>
+            </div>
+            <div class="battle-arena">
+                <canvas id="battle-canvas" width="800" height="600"></canvas>
+            </div>
+        </div>
+
+        <!-- Pantalla de resultado -->
+        <div id="result-screen" class="screen">
+            <div class="result-screen">
+                <div class="winner-announcement" id="winner-announcement">¡Ganador!</div>
+                <div class="winner-name" id="winner-name">Jugador</div>
+                <div class="timer" id="result-timer">3</div>
+            </div>
+        </div>
+
+        <!-- Pantalla de campeón -->
+        <div id="champion-screen" class="screen">
+            <div class="champion-screen">
+                <div class="champion-title">👑 ¡CAMPEÓN DEL TORNEO! 👑</div>
+                <div class="champion-name" id="champion-name">Jugador</div>
+                <div class="champion-trophy">🏆</div>
+                <div class="timer" id="champion-timer">10</div>
+            </div>
+        </div>
+
+        <!-- Overlay de temporizador automático -->
+        <div id="auto-timer-overlay" class="auto-timer" style="display: none;">
+            <h3>Iniciando automáticamente en:</h3>
+            <div class="countdown" id="countdown-timer">5</div>
+        </div>
+    </div>
+
+    <script>
+        // Configuración del widget OBS
+        const OBS_CONFIG = {
+            autoTimer: 5, // segundos para decisiones automáticas
+            resultTimer: 3, // segundos para mostrar resultado
+            championTimer: 10, // segundos para mostrar campeón
+            autoUpgrades: true, // mejoras automáticas
+            autoBattles: true // combates automáticos
+        };
+
+        // Clase principal del widget OBS
+        class OBSWidget {
+            constructor() {
+                this.players = [];
+                this.currentRound = 1;
+                this.currentMatch = 0;
+                this.matches = [];
+                this.currentPlayer1 = null;
+                this.currentPlayer2 = null;
+                this.battleAnimation = null;
+                this.upgradesUsed = { 1: [], 2: [] };
+                this.autoTimer = null;
+                this.resultTimer = null;
+                
+                this.initializeWidget();
+                this.setupUrl();
+            }
+
+            initializeWidget() {
+                // Configurar URL del widget
+                this.setupUrl();
+                
+                // Inicializar nombres de jugadores automáticos
+                this.generateAutoPlayers(4);
+            }
+
+            setupUrl() {
+                const currentUrl = window.location.href;
+                document.getElementById('widget-url').value = currentUrl;
+            }
+
+            generateAutoPlayers(count) {
+                const names = [
+                    'Bola Eléctrica', 'Guambrillo Pro', 'Sierra Mortal', 'Velocidad X',
+                    'Tornado Azul', 'Rayo Verde', 'Furia Roja', 'Hielo Blanco',
+                    'Sombra Negra', 'Luz Dorada', 'Viento Gris', 'Fuego Púrpura',
+                    'Agua Celeste', 'Tierra Marrón', 'Metal Plateado', 'Cristal Arcoíris'
+                ];
+
+                this.players = [];
+                for (let i = 0; i < count; i++) {
+                    this.players.push({
+                        id: i + 1,
+                        name: names[i],
+                        speed: 5,
+                        sawChance: 20,
+                        size: 100,
+                        eliminated: false
+                    });
+                }
+            }
+
+            setPlayerCount(count) {
+                document.getElementById('player-count-display').textContent = count;
+                this.generateAutoPlayers(count);
+            }
+
+            startAutoTournament() {
+                this.generateMatches();
+                this.showScreen('tournament-screen');
+                this.updateTournamentDisplay();
+                this.prepareNextMatch();
+                this.startAutoTimer();
+            }
+
+            generateMatches() {
+                this.matches = [];
+                const shuffledPlayers = [...this.players].sort(() => Math.random() - 0.5);
+                
+                for (let i = 0; i < shuffledPlayers.length; i += 2) {
+                    this.matches.push({
+                        player1: shuffledPlayers[i],
+                        player2: shuffledPlayers[i + 1],
+                        winner: null,
+                        completed: false
+                    });
+                }
+            }
+
+            updateTournamentDisplay() {
+                document.getElementById('current-round').textContent = `Ronda ${this.currentRound}`;
+                document.getElementById('match-info').textContent = `Combate ${this.currentMatch + 1} de ${this.matches.length}`;
+            }
+
+            prepareNextMatch() {
+                if (this.currentMatch >= this.matches.length) {
+                    this.advanceRound();
+                    return;
+                }
+
+                const match = this.matches[this.currentMatch];
+                this.currentPlayer1 = { ...match.player1 };
+                this.currentPlayer2 = { ...match.player2 };
+                
+                this.upgradesUsed = { 1: [], 2: [] };
+                this.updateMatchPreview();
+            }
+
+            updateMatchPreview() {
+                document.getElementById('player1-name').textContent = this.currentPlayer1.name;
+                document.getElementById('player1-speed').textContent = this.currentPlayer1.speed;
+                document.getElementById('player1-saw-chance').textContent = this.currentPlayer1.sawChance + '%';
+                document.getElementById('player1-size').textContent = this.currentPlayer1.size + '%';
+
+                document.getElementById('player2-name').textContent = this.currentPlayer2.name;
+                document.getElementById('player2-speed').textContent = this.currentPlayer2.speed;
+                document.getElementById('player2-saw-chance').textContent = this.currentPlayer2.sawChance + '%';
+                document.getElementById('player2-size').textContent = this.currentPlayer2.size + '%';
+
+                document.querySelectorAll('.upgrade-btn').forEach(btn => {
+                    btn.classList.remove('used');
+                });
+            }
+
+            startAutoTimer() {
+                let timeLeft = OBS_CONFIG.autoTimer;
+                const timerElement = document.getElementById('auto-timer');
+                
+                this.autoTimer = setInterval(() => {
+                    timeLeft--;
+                    timerElement.textContent = timeLeft;
+                    
+                    if (timeLeft <= 0) {
+                        clearInterval(this.autoTimer);
+                        this.applyAutoUpgrades();
+                        this.startBattle();
+                    }
+                }, 1000);
+            }
+
+            applyAutoUpgrades() {
+                if (!OBS_CONFIG.autoUpgrades) return;
+
+                // Aplicar mejoras aleatorias automáticamente
+                const upgrades = ['speed', 'saw', 'size'];
+                const players = [1, 2];
+
+                players.forEach(player => {
+                    const availableUpgrades = upgrades.filter(upgrade => 
+                        !this.upgradesUsed[player].includes(upgrade)
+                    );
+
+                    if (availableUpgrades.length > 0) {
+                        const randomUpgrade = availableUpgrades[Math.floor(Math.random() * availableUpgrades.length)];
+                        this.applyUpgrade(player, randomUpgrade);
+                    }
+                });
+            }
+
+            applyUpgrade(player, upgrade) {
+                if (this.upgradesUsed[player].includes(upgrade)) return;
+
+                this.upgradesUsed[player].push(upgrade);
+                
+                const playerObj = player === 1 ? this.currentPlayer1 : this.currentPlayer2;
+                
+                switch (upgrade) {
+                    case 'speed':
+                        playerObj.speed += 2;
+                        break;
+                    case 'saw':
+                        playerObj.sawChance += 10;
+                        break;
+                    case 'size':
+                        playerObj.size += 20;
+                        break;
+                }
+
+                this.updateMatchPreview();
+                
+                // Marcar botón como usado
+                document.querySelectorAll(`[data-player="${player}"][data-upgrade="${upgrade}"]`).forEach(btn => {
+                    btn.classList.add('used');
+                });
+            }
+
+            startBattle() {
+                this.showScreen('battle-screen');
+                this.startBattleSimulation();
+            }
+
+            startBattleSimulation() {
+                const canvas = document.getElementById('battle-canvas');
+                const ctx = canvas.getContext('2d');
+                
+                const config = {
+                    canvas: canvas,
+                    ctx: ctx,
+                    player1: { ...this.currentPlayer1, x: 100, y: 300, vx: 0, vy: 0 },
+                    player2: { ...this.currentPlayer2, x: 700, y: 300, vx: 0, vy: 0 },
+                    saws: [],
+                    time: 0
+                };
+
+                this.battleAnimation = setInterval(() => {
+                    this.updateBattle(config);
+                    this.drawBattle(config);
+                    
+                    config.time++;
+                    
+                    // Condición de fin de batalla (simplificada)
+                    if (config.time > 300 || this.checkBattleEnd(config)) {
+                        this.endBattle(this.determineWinner(config));
+                    }
+                }, 16);
+            }
+
+            updateBattle(config) {
+                // Mover jugadores
+                this.moveBall(config.player1);
+                this.moveBall(config.player2);
+                
+                // Verificar colisiones con paredes
+                this.checkWallCollision(config.player1, config.canvas);
+                this.checkWallCollision(config.player2, config.canvas);
+                
+                // Verificar colisión entre bolas
+                this.checkBallCollision(config.player1, config.player2);
+                
+                // Generar sierras
+                if (Math.random() < 0.02) {
+                    this.spawnSaw(config);
+                }
+                
+                // Actualizar sierras
+                this.updateSaws(config);
+                this.checkSawCollisions(config);
+            }
+
+            moveBall(player) {
+                // Movimiento aleatorio simple
+                if (Math.random() < 0.1) {
+                    player.vx = (Math.random() - 0.5) * player.speed;
+                    player.vy = (Math.random() - 0.5) * player.speed;
+                }
+                
+                player.x += player.vx;
+                player.y += player.vy;
+            }
+
+            checkWallCollision(player, canvas) {
+                const radius = player.size / 10;
+                
+                if (player.x - radius < 0 || player.x + radius > canvas.width) {
+                    player.vx *= -0.8;
+                }
+                if (player.y - radius < 0 || player.y + radius > canvas.height) {
+                    player.vy *= -0.8;
+                }
+            }
+
+            checkBallCollision(player1, player2) {
+                const dx = player2.x - player1.x;
+                const dy = player2.y - player1.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const minDistance = (player1.size + player2.size) / 10;
+                
+                if (distance < minDistance) {
+                    // Colisión - determinar ganador basado en stats
+                    const power1 = player1.speed + player1.sawChance + player1.size;
+                    const power2 = player2.speed + player2.sawChance + player2.size;
+                    
+                    if (power1 > power2) {
+                        player2.size -= 10;
+                    } else {
+                        player1.size -= 10;
+                    }
+                }
+            }
+
+            spawnSaw(config) {
+                config.saws.push({
+                    x: Math.random() * config.canvas.width,
+                    y: Math.random() * config.canvas.height,
+                    size: 20
+                });
+            }
+
+            updateSaws(config) {
+                config.saws = config.saws.filter(saw => saw.size > 0);
+            }
+
+            checkSawCollisions(config) {
+                config.saws.forEach(saw => {
+                    [config.player1, config.player2].forEach(player => {
+                        const dx = saw.x - player.x;
+                        const dy = saw.y - player.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < saw.size + player.size / 10) {
+                            player.size -= 5;
+                            saw.size = 0;
+                        }
+                    });
+                });
+            }
+
+            drawBattle(config) {
+                const ctx = config.ctx;
+                ctx.clearRect(0, 0, config.canvas.width, config.canvas.height);
+                
+                // Dibujar fondo
+                ctx.fillStyle = '#1a1a1a';
+                ctx.fillRect(0, 0, config.canvas.width, config.canvas.height);
+                
+                // Dibujar sierras
+                config.saws.forEach(saw => {
+                    ctx.fillStyle = '#ff6b6b';
+                    ctx.beginPath();
+                    ctx.arc(saw.x, saw.y, saw.size, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                
+                // Dibujar jugadores
+                [config.player1, config.player2].forEach((player, index) => {
+                    const radius = player.size / 10;
+                    const colors = ['#4ecdc4', '#ff6b6b'];
+                    
+                    ctx.fillStyle = colors[index];
+                    ctx.beginPath();
+                    ctx.arc(player.x, player.y, radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Nombre del jugador
+                    ctx.fillStyle = 'white';
+                    ctx.font = '16px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(player.name, player.x, player.y - radius - 10);
+                });
+            }
+
+            checkBattleEnd(config) {
+                return config.player1.size <= 0 || config.player2.size <= 0;
+            }
+
+            determineWinner(config) {
+                if (config.player1.size <= 0) return config.player2;
+                if (config.player2.size <= 0) return config.player1;
+                
+                // Si ambos siguen vivos, ganador por stats
+                const power1 = config.player1.speed + config.player1.sawChance + config.player1.size;
+                const power2 = config.player2.speed + config.player2.sawChance + config.player2.size;
+                
+                return power1 >= power2 ? config.player1 : config.player2;
+            }
+
+            endBattle(winner) {
+                clearInterval(this.battleAnimation);
+                
+                // Actualizar match
+                const match = this.matches[this.currentMatch];
+                match.winner = winner;
+                match.completed = true;
+                
+                // Eliminar perdedor
+                const loser = winner.id === match.player1.id ? match.player2 : match.player1;
+                loser.eliminated = true;
+                
+                this.showBattleResult(winner);
+            }
+
+            showBattleResult(winner) {
+                document.getElementById('winner-announcement').textContent = '¡Ganador!';
+                document.getElementById('winner-name').textContent = winner.name;
+                
+                this.showScreen('result-screen');
+                
+                // Timer automático para siguiente combate
+                let timeLeft = OBS_CONFIG.resultTimer;
+                const timerElement = document.getElementById('result-timer');
+                
+                this.resultTimer = setInterval(() => {
+                    timeLeft--;
+                    timerElement.textContent = timeLeft;
+                    
+                    if (timeLeft <= 0) {
+                        clearInterval(this.resultTimer);
+                        this.nextMatch();
+                    }
+                }, 1000);
+            }
+
+            nextMatch() {
+                this.currentMatch++;
+                
+                if (this.currentMatch >= this.matches.length) {
+                    this.advanceRound();
+                } else {
+                    this.prepareNextMatch();
+                    this.updateTournamentDisplay();
+                    this.showScreen('tournament-screen');
+                    this.startAutoTimer();
+                }
+            }
+
+            advanceRound() {
+                // Filtrar jugadores eliminados
+                this.players = this.players.filter(player => !player.eliminated);
+                
+                if (this.players.length === 1) {
+                    this.showChampion(this.players[0]);
+                } else {
+                    this.currentRound++;
+                    this.currentMatch = 0;
+                    this.generateMatches();
+                    this.updateTournamentDisplay();
+                    this.prepareNextMatch();
+                    this.showScreen('tournament-screen');
+                    this.startAutoTimer();
+                }
+            }
+
+            showChampion(champion) {
+                document.getElementById('champion-name').textContent = champion.name;
+                this.showScreen('champion-screen');
+                
+                // Timer automático para reiniciar
+                let timeLeft = OBS_CONFIG.championTimer;
+                const timerElement = document.getElementById('champion-timer');
+                
+                this.resultTimer = setInterval(() => {
+                    timeLeft--;
+                    timerElement.textContent = timeLeft;
+                    
+                    if (timeLeft <= 0) {
+                        clearInterval(this.resultTimer);
+                        this.resetGame();
+                    }
+                }, 1000);
+            }
+
+            resetGame() {
+                this.currentRound = 1;
+                this.currentMatch = 0;
+                this.matches = [];
+                this.currentPlayer1 = null;
+                this.currentPlayer2 = null;
+                this.upgradesUsed = { 1: [], 2: [] };
+                
+                if (this.autoTimer) clearInterval(this.autoTimer);
+                if (this.resultTimer) clearInterval(this.resultTimer);
+                if (this.battleAnimation) clearInterval(this.battleAnimation);
+                
+                this.showScreen('start-screen');
+            }
+
+            showScreen(screenId) {
+                document.querySelectorAll('.screen').forEach(screen => {
+                    screen.classList.remove('active');
+                });
+                document.getElementById(screenId).classList.add('active');
+            }
+        }
+
+        // Funciones globales
+        function setPlayerCount(count) {
+            widget.setPlayerCount(count);
+        }
+
+        function startAutoTournament() {
+            widget.startAutoTournament();
+        }
+
+        function copyUrl() {
+            const urlInput = document.getElementById('widget-url');
+            urlInput.select();
+            urlInput.setSelectionRange(0, 99999);
+            document.execCommand('copy');
+            
+            // Feedback visual
+            const copyBtn = document.querySelector('.copy-btn');
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = '¡Copiado!';
+            copyBtn.style.background = '#4ecdc4';
+            
+            setTimeout(() => {
+                copyBtn.textContent = originalText;
+                copyBtn.style.background = '#4ecdc4';
+            }, 2000);
+        }
+
+        // Inicializar widget cuando se carga la página
+        let widget;
+        document.addEventListener('DOMContentLoaded', () => {
+            widget = new OBSWidget();
+        });
+    </script>
+</body>
+</html> 
