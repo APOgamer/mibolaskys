@@ -263,15 +263,13 @@ class TorneoBolas {
         }
 
         const match = this.matches[this.currentMatch];
-        this.currentPlayer1 = { ...match.player1 };
-        this.currentPlayer2 = { ...match.player2 };
-        
+        // Reiniciar tamaño a 100% para ambos jugadores
+        this.currentPlayer1 = { ...match.player1, size: 100 };
+        this.currentPlayer2 = { ...match.player2, size: 100 };
         // Resetear mejoras
         this.upgradesUsed = { 1: [], 2: [] };
-        
         // Actualizar display
         this.updateMatchPreview();
-        
         // Iniciar temporizador automático si está activado
         if (this.widgetMode) {
             console.log('[AUTO] Preparando combate', this.currentMatch + 1, 'de', this.matches.length);
@@ -460,16 +458,19 @@ class TorneoBolas {
 
     // Mover bola
     moveBall(player) {
-        // Normalizar velocidad para mantener consistencia con el atributo speed
-        const currentSpeed = Math.sqrt(player.vx * player.vx + player.vy * player.vy);
+        // Mantener velocidad constante según el atributo speed
         const targetSpeed = player.speed;
-        
+        const currentSpeed = Math.sqrt(player.vx * player.vx + player.vy * player.vy);
         if (currentSpeed > 0) {
             const scale = targetSpeed / currentSpeed;
             player.vx *= scale;
             player.vy *= scale;
+        } else {
+            // Si por alguna razón la velocidad es 0, asignar una dirección aleatoria
+            const angle = Math.random() * 2 * Math.PI;
+            player.vx = Math.cos(angle) * targetSpeed;
+            player.vy = Math.sin(angle) * targetSpeed;
         }
-        
         player.x += player.vx;
         player.y += player.vy;
     }
